@@ -17,17 +17,31 @@ UKF::UKF() {
   // if this is false, radar measurements will be ignored (except during init)
   use_radar_ = true;
 
+  // State dimension
+  n_x_ = 5;
+
+  // Augmented state dimension
+  n_aug_ = 7;
+
   // initial state vector
-  x_ = VectorXd(5);
+  x_ = VectorXd(n_x_);
+  x_ = VectorXd::Zero(n_x_);
 
   // initial covariance matrix
-  P_ = MatrixXd(5, 5);
+  P_ = MatrixXd(n_x_, n_x_);
+  // Create the covariance matrix
+  float init_variance = 1;
+  P_ << init_variance, 0, 0, 0, 0,
+         0, init_variance, 0, 0, 0,
+         0, 0, init_variance, 0, 0,
+         0, 0, 0, init_variance, 0,
+         0, 0, 0, 0, init_variance;
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   std_a_ = 0.2;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 0.2;
+  std_yawdd_ = 0.6;
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -36,22 +50,16 @@ UKF::UKF() {
   std_laspy_ = 0.15;
 
   // Radar measurement noise standard deviation radius in m
-  std_radr_ = 0.3; //0.3;
+  std_radr_ = 0.3;
 
   // Radar measurement noise standard deviation angle in rad
-  std_radphi_ = 0.03; //0.0175;
+  std_radphi_ = 0.03;
 
   // Radar measurement noise standard deviation radius change in m/s
-  std_radrd_ = 0.3; //0.1;
+  std_radrd_ = 0.3;
 
   // initially set to false, set to true in first call of ProcessMeasurement
   is_initialized_ = false;
-
-  // State dimension
-  n_x_ = 5;
-
-  // Augmented state dimension
-  n_aug_ = 7;
 
   //create augmented mean vector
   x_aug_ = VectorXd(n_aug_);
@@ -64,7 +72,7 @@ UKF::UKF() {
   Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
 
   // time when the state is true, in us
-  time_us_ = 1000;
+  time_us_ = 0;
 
   // Weights of sigma points
   weights_ = VectorXd(2 * n_aug_ + 1);
@@ -112,16 +120,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
         x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0.0, 0.0, 0.0;
       }
 
-      // Create the covariance matrix
-      float init_variance = 1;
-      P_ << init_variance, 0, 0, 0, 0,
-               0, init_variance, 0, 0, 0,
-               0, 0, init_variance, 0, 0,
-               0, 0, 0, init_variance, 0,
-               0, 0, 0, 0, init_variance;
-
       previous_timestamp_ = meas_package.timestamp_;
-
       // done initializing, no need to predict or update
       is_initialized_ = true;
       return;
@@ -233,71 +232,84 @@ void UKF::AugmentedSigmaPoints() {
 void UKF::SigmaPointPrediction(double delta_t) {
   cout << "Predicting with sigma points" << endl;   
 
-  // compute predictions
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
-      // Setup initial state
-      VectorXd x_k = Xsig_aug_.col(i); 
-      float p_x = x_k(0);
-      float p_y = x_k(1);
-      float v = x_k(2);
-      float psi = x_k(3);
-      float psi_dot = x_k(4);
-      float nu_a = x_k(5);
-      float nu_psi_ddot = x_k(6);
-      
-      // Setup stochastic part
-      VectorXd stochastic = VectorXd(n_x_);
-      stochastic(0) = (1/2) * delta_t * delta_t * cos(psi) * nu_a;
-      stochastic(1) = (1/2) * delta_t * delta_t * sin(psi) * nu_a;
-      stochastic(2) = delta_t * nu_a;
-      stochastic(3) = (1/2) * delta_t * delta_t * nu_psi_ddot;
-      stochastic(4) = delta_t * nu_psi_ddot;
-    
-      //predict deterministic
-      VectorXd deterministic = VectorXd(n_x_);
-      if (fabs(psi_dot) < 0.0001) {
-          deterministic(0) = v * cos(psi) * delta_t;
-          deterministic(1) = v * sin(psi) * delta_t;
-          deterministic(2) = 0;
-          deterministic(3) = 0;
-          deterministic(4) = 0;
-      } else {
-          deterministic(0) = v / psi_dot * (sin(psi + psi_dot * delta_t) - sin(psi));
-          deterministic(1) = v / psi_dot * (-cos(psi + psi_dot * delta_t) - cos(psi));
-          deterministic(2) = 0;
-          deterministic(3) = psi_dot * delta_t;
-          deterministic(4) = 0;
-      }
-     
-      //set output state
-      Xsig_pred_.col(i) = x_k.head(n_x_) + deterministic + stochastic;
+  //predict sigma points
+  for (int i = 0; i< 2*n_aug_+1; i++)
+  {
+    //extract values for better readability
+    double p_x = Xsig_aug_(0, i);
+    double p_y = Xsig_aug_(1, i);
+    double v = Xsig_aug_(2, i);
+    double yaw = Xsig_aug_(3, i);
+    double yawd = Xsig_aug_(4, i);
+    double nu_a = Xsig_aug_(5, i);
+    double nu_yawdd = Xsig_aug_(6, i);
+
+    //predicted state values
+    double px_p, py_p;
+
+    //avoid division by zero
+    if (fabs(yawd) > 0.001) {
+        px_p = p_x + v / yawd * ( sin (yaw + yawd * delta_t) - sin(yaw));
+        py_p = p_y + v / yawd * ( cos(yaw) - cos(yaw + yawd * delta_t) );
+    }
+    else {
+        px_p = p_x + v * delta_t * cos(yaw);
+        py_p = p_y + v * delta_t * sin(yaw);
+    }
+
+    double v_p = v;
+    double yaw_p = yaw + yawd * delta_t;
+    double yawd_p = yawd;
+
+    //add noise
+    px_p = px_p + 0.5 * nu_a * delta_t * delta_t * cos(yaw);
+    py_p = py_p + 0.5 * nu_a * delta_t * delta_t * sin(yaw);
+    v_p = v_p + nu_a * delta_t;
+
+    yaw_p = yaw_p + 0.5 * nu_yawdd * delta_t * delta_t;
+    yawd_p = yawd_p + nu_yawdd * delta_t;
+
+    //write predicted sigma point into right column
+    Xsig_pred_(0, i) = px_p;
+    Xsig_pred_(1, i) = py_p;
+    Xsig_pred_(2, i) = v_p;
+    Xsig_pred_(3, i) = yaw_p;
+    Xsig_pred_(4, i) = yawd_p;
   }
   cout << "Xsig_pred_ = " << Xsig_pred_ << endl;       
 }
 
 void UKF::PredictMeanAndCovariance() {
   cout << "Predicting mean and covariance" << endl;   
+  // set weights
+  double weight_0 = lambda_ / (lambda_ + n_aug_);
+  weights_(0) = weight_0;
+  for (int i = 1; i < 2 * n_aug_ + 1; i++)
+  {  //2n+1 weights_
+      double weight = 0.5 / (n_aug_ + lambda_);
+      weights_(i) = weight;
+  }
 
-  //set weights
-  weights_.fill( 1 / (2 * (lambda_ + n_aug_)));
-  weights_(0) = lambda_ / (lambda_ + n_aug_);
-  
-  //predict state mean
-  x_ = Xsig_pred_ * weights_;
-  
-  //predict state covariance matrix
-  MatrixXd X_temp = Xsig_pred_;
-  X_temp.colwise() -= x_;
+  //predicted state mean
+  x_.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++)
+  {  //iterate over sigma points
+      x_ = x_ + weights_(i) * Xsig_pred_.col(i);
+  }
+
+  //predicted state covariance matrix
   P_.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
-    // state difference
-    VectorXd x_diff = X_temp.col(i);
-    //angle normalization
-    while (x_diff(3)> M_PI) x_diff(3)-=2.*M_PI;
-    while (x_diff(3)<-M_PI) x_diff(3)+=2.*M_PI;
+  for (int i = 0; i < 2 * n_aug_ + 1; i++)
+  {  //iterate over sigma points
 
-    P_ = P_ + weights_(i) * x_diff * x_diff.transpose() ;
-  }  
+      // state difference
+      VectorXd x_diff = Xsig_pred_.col(i) - x_;
+      //angle normalization
+      while (x_diff(3) > M_PI)  x_diff(3) -= 2. * M_PI;
+      while (x_diff(3) < -M_PI) x_diff(3) += 2. * M_PI;
+
+      P_ = P_ + weights_(i) * x_diff * x_diff.transpose();
+  }    
   cout << "x_ = " << x_ << endl;       
   cout << "P_ = " << P_ << endl;       
 }
