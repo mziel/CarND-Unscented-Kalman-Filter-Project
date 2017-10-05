@@ -2,6 +2,7 @@
 #define UKF_H
 
 #include "measurement_package.h"
+#include "tools.h"
 #include "Eigen/Dense"
 #include <vector>
 #include <string>
@@ -27,6 +28,12 @@ public:
 
   ///* state covariance matrix
   MatrixXd P_;
+
+  //* augmented state vector;
+  VectorXd x_aug_;
+
+  ///* augmented sigma points matrix
+  MatrixXd Xsig_aug_;
 
   ///* predicted sigma points matrix
   MatrixXd Xsig_pred_;
@@ -67,6 +74,11 @@ public:
   ///* Sigma point spreading parameter
   double lambda_;
 
+  ///* Previous timestamp
+  long long previous_timestamp_;
+
+  ///* Helper object
+  Tools tools;
 
   /**
    * Constructor
@@ -102,6 +114,12 @@ public:
    * @param meas_package The measurement at k+1
    */
   void UpdateRadar(MeasurementPackage meas_package);
+
+  void AugmentedSigmaPoints();
+  void SigmaPointPrediction(double delta_t);
+  void PredictMeanAndCovariance();
+  void PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, int n_z);
+  void UpdateRadarState(VectorXd z_pred, MatrixXd S_pred, MatrixXd Z_sig, int n_z, VectorXd z);
 };
 
 #endif /* UKF_H */
