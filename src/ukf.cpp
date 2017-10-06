@@ -11,10 +11,10 @@ using std::vector;
  * Initializes Unscented Kalman filter
  */
 UKF::UKF() {
-  // if this is false, laser measurements will be ignored (except during init)
-  use_laser_ = false;
+  // if this is false, laser measurements will be ignored
+  use_laser_ = true;
 
-  // if this is false, radar measurements will be ignored (except during init)
+  // if this is false, radar measurements will be ignored
   use_radar_ = true;
 
   // State dimension
@@ -91,7 +91,7 @@ UKF::~UKF() {}
  * either radar or laser.
  */
 void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
-  cout << "Processing measurment" << endl;
+  // cout << "Processing measurment" << endl;
   bool processCurrentRadar = (meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_);
   bool processCurrentLaser = (meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_);
   bool processCurent = processCurrentRadar || processCurrentLaser;
@@ -101,7 +101,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
      ****************************************************************************/
     if (!is_initialized_) {
       if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
-      cout << "Radar" << endl;
+      // cout << "Radar" << endl;
 
         /**
         Convert radar from polar to cartesian coordinates and initialize state.
@@ -112,7 +112,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
         x_(4) = 0.0; // radar measurement does not contain enough information to determine the yaw rate
       }
       else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
-      cout << "Lidar" << endl;
+      // cout << "Lidar" << endl;
 
         /**
         Initialize state
@@ -145,9 +145,9 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
       }
     
       // print the output
-      cout << "x_ = " << x_ << endl;
-      cout << "P_ = " << P_ << endl;
-      cout << "_____________________________ " << endl;
+      // cout << "x_ = " << x_ << endl;
+      // cout << "P_ = " << P_ << endl;
+      // cout << "_____________________________ " << endl;
     }
   }
 }
@@ -158,7 +158,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
  * measurement and this one.
  */
 void UKF::Prediction(double delta_t) {
-    cout << "Prediction step" << endl;
+    // cout << "Prediction step" << endl;
     AugmentedSigmaPoints();
     SigmaPointPrediction(delta_t);
     PredictMeanAndCovariance();
@@ -169,15 +169,17 @@ void UKF::Prediction(double delta_t) {
  * @param {MeasurementPackage} meas_package
  */
 void UKF::UpdateLidar(MeasurementPackage meas_package) {
-  cout << "Updating lidar" << endl;  
+  // cout << "Updating lidar" << endl;  
   /**
   TODO:
-
-  Complete this function! Use lidar data to update the belief about the object's
-  position. Modify the state vector, x_, and covariance, P_.
-
   You'll also need to calculate the lidar NIS.
   */
+    int n_z = 2;
+    VectorXd z_out = VectorXd(n_z);
+    MatrixXd S_out = MatrixXd(n_z, n_z);
+    MatrixXd Z_sig_out = MatrixXd(n_z, 2 * n_aug_ + 1);
+    PredictLidarMeasurement(&z_out, &S_out, &Z_sig_out, n_z);
+    UpdateState(z_out, S_out, Z_sig_out, n_z, meas_package.raw_measurements_);        
 }
 
 /**
@@ -185,7 +187,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
  * @param {MeasurementPackage} meas_package
  */
 void UKF::UpdateRadar(MeasurementPackage meas_package) {
-  cout << "Updating radar" << endl;  
+  // cout << "Updating radar" << endl;  
   /**
   TODO:
   You'll also need to calculate the radar NIS.
@@ -195,12 +197,12 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     MatrixXd S_out = MatrixXd(n_z, n_z);
     MatrixXd Z_sig_out = MatrixXd(n_z, 2 * n_aug_ + 1);
     PredictRadarMeasurement(&z_out, &S_out, &Z_sig_out, n_z);
-    UpdateRadarState(z_out, S_out, Z_sig_out, n_z, meas_package.raw_measurements_);        
+    UpdateState(z_out, S_out, Z_sig_out, n_z, meas_package.raw_measurements_);        
 }
 
 
 void UKF::AugmentedSigmaPoints() {
-  cout << "Calculating sigma points" << endl;   
+  // cout << "Calculating sigma points" << endl;   
 
   //fill augmented mean state
   x_aug_.head(5) = x_;
@@ -226,11 +228,11 @@ void UKF::AugmentedSigmaPoints() {
     Xsig_aug_.col(i + 1)          = x_aug_ + sqrt(lambda_ + n_aug_) * L.col(i);
     Xsig_aug_.col(i + 1 + n_aug_) = x_aug_ - sqrt(lambda_ + n_aug_) * L.col(i);
   }
-  cout << "Xsig_aug_ = " << Xsig_aug_ << endl;     
+  // cout << "Xsig_aug_ = " << Xsig_aug_ << endl;     
 }
 
 void UKF::SigmaPointPrediction(double delta_t) {
-  cout << "Predicting with sigma points" << endl;   
+  // cout << "Predicting with sigma points" << endl;   
 
   //predict sigma points
   for (int i = 0; i< 2*n_aug_+1; i++)
@@ -276,11 +278,11 @@ void UKF::SigmaPointPrediction(double delta_t) {
     Xsig_pred_(3, i) = yaw_p;
     Xsig_pred_(4, i) = yawd_p;
   }
-  cout << "Xsig_pred_ = " << Xsig_pred_ << endl;       
+  // cout << "Xsig_pred_ = " << Xsig_pred_ << endl;       
 }
 
 void UKF::PredictMeanAndCovariance() {
-  cout << "Predicting mean and covariance" << endl;   
+  // cout << "Predicting mean and covariance" << endl;   
   // set weights
   double weight_0 = lambda_ / (lambda_ + n_aug_);
   weights_(0) = weight_0;
@@ -310,12 +312,12 @@ void UKF::PredictMeanAndCovariance() {
 
       P_ = P_ + weights_(i) * x_diff * x_diff.transpose();
   }    
-  cout << "x_ = " << x_ << endl;       
-  cout << "P_ = " << P_ << endl;       
+  // cout << "x_ = " << x_ << endl;       
+  // cout << "P_ = " << P_ << endl;       
 }
 
 void UKF::PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, int n_z) {
-  cout << "Predicting radar measurement" << endl;   
+  // cout << "Predicting radar measurement" << endl;   
 
   //create matrix for sigma points in measurement space
   MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
@@ -370,13 +372,64 @@ void UKF::PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_
   *z_out = z_pred;
   *S_out = S;
   *Z_sig_out = Zsig;
-  cout << "z_pred = " << z_pred << endl;       
-  cout << "S = " << S << endl;       
-  cout << "Z_sig_out = " << Zsig << endl;       
+  // cout << "z_pred = " << z_pred << endl;       
+  // cout << "S = " << S << endl;       
+  // cout << "Z_sig_out = " << Zsig << endl;       
 }
 
-void UKF::UpdateRadarState(VectorXd z_pred, MatrixXd S_pred, MatrixXd Z_sig, int n_z, VectorXd z) {
-  cout << "Updating state for radar" << endl;   
+void UKF::PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, int n_z) {
+  // cout << "Predicting lidar measurement" << endl;   
+
+  //create matrix for sigma points in measurement space
+  MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
+
+  //transform sigma points into measurement space
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //2n+1 simga points
+
+    // extract values for better readibility
+    double p_x = Xsig_pred_(0, i);
+    double p_y = Xsig_pred_(1, i);
+
+    // measurement model
+    Zsig(0, i) = p_x;                            //p_x
+    Zsig(1, i) = p_y;                            //p_y
+  }
+
+  //mean predicted measurement
+  VectorXd z_pred = VectorXd(n_z);
+  z_pred.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {
+      z_pred = z_pred + weights_(i) * Zsig.col(i);
+  }
+
+  //measurement covariance matrix S
+  MatrixXd S = MatrixXd(n_z, n_z);
+  S.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //2n+1 simga points
+    //residual
+    VectorXd z_diff = Zsig.col(i) - z_pred;
+
+    S = S + weights_(i) * z_diff * z_diff.transpose();
+  }
+
+  //add measurement noise covariance matrix
+  MatrixXd R = MatrixXd(n_z, n_z);
+  R <<    std_laspx_*std_laspx_, 0,
+          0, std_laspy_*std_laspy_;
+  S = S + R;
+
+  //write result
+  *z_out = z_pred;
+  *S_out = S;
+  *Z_sig_out = Zsig;
+  // cout << "z_pred = " << z_pred << endl;       
+  // cout << "S = " << S << endl;       
+  // cout << "Z_sig_out = " << Zsig << endl;       
+}
+
+
+void UKF::UpdateState(VectorXd z_pred, MatrixXd S_pred, MatrixXd Z_sig, int n_z, VectorXd z) {
+  // cout << "Updating state" << endl;   
 
   //create matrix for cross correlation Tc
   MatrixXd Tc = MatrixXd(n_x_, n_z);
@@ -406,13 +459,15 @@ void UKF::UpdateRadarState(VectorXd z_pred, MatrixXd S_pred, MatrixXd Z_sig, int
   //residual
   VectorXd z_diff = z - z_pred;
 
+  if (n_z==3) //Radar only
+  {
   //angle normalization
   while (z_diff(1)> M_PI) z_diff(1)-=2.*M_PI;
   while (z_diff(1)<-M_PI) z_diff(1)+=2.*M_PI;
-
+  }
   //update state mean and covariance matrix
   x_ = x_ + K * z_diff;
   P_ = P_ - K*S_pred*K.transpose();
-  cout << "x_ = " << x_ << endl;       
-  cout << "P_ = " << P_ << endl;       
+  // cout << "x_ = " << x_ << endl;       
+  // cout << "P_ = " << P_ << endl;       
 }

@@ -17,10 +17,10 @@ public:
   ///* initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
 
-  ///* if this is false, laser measurements will be ignored (except for init)
+  ///* if this is false, laser measurements will be ignored
   bool use_laser_;
 
-  ///* if this is false, radar measurements will be ignored (except for init)
+  ///* if this is false, radar measurements will be ignored
   bool use_radar_;
 
   ///* state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
@@ -115,11 +115,36 @@ public:
    */
   void UpdateRadar(MeasurementPackage meas_package);
 
+  /**
+   * Creates sigma points in the augmented space (incl. noise)
+   */
   void AugmentedSigmaPoints();
+
+  /**
+   * Predicts sigma points in the process function
+   * @param delta_t Time difference between measurements
+   */
   void SigmaPointPrediction(double delta_t);
+
+  /**
+   * Provides a prediction for state mean and covariance
+   */
   void PredictMeanAndCovariance();
+
+  /**
+   * Predicts mean and covariance after passing through measurement function for radar
+   */
   void PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, int n_z);
-  void UpdateRadarState(VectorXd z_pred, MatrixXd S_pred, MatrixXd Z_sig, int n_z, VectorXd z);
+
+  /**
+   * Predicts mean and covariance after passing through measurement function for lidar
+   */
+  void PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, int n_z);
+
+  /**
+   * Performs state update based on the measurement and prediction 
+   */
+  void UpdateState(VectorXd z_pred, MatrixXd S_pred, MatrixXd Z_sig, int n_z, VectorXd z);
 };
 
 #endif /* UKF_H */
