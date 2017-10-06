@@ -100,32 +100,32 @@ public:
    * ProcessMeasurement
    * @param meas_package The latest measurement data of either radar or laser
    */
-  void ProcessMeasurement(MeasurementPackage meas_package);
+  void ProcessMeasurement(const MeasurementPackage& meas_package);
 
   /**
    * Initialize state upon receiving a first measurement
    * @param meas_package The latest measurement data of either radar or laser
    */
-  void InitializeState(MeasurementPackage meas_package);
+  void InitializeState(const MeasurementPackage& meas_package);
 
   /**
    * Prediction Predicts sigma points, the state, and the state covariance
    * matrix
    * @param meas_package Measurement to extract delta between k and k+1 
    */
-  void Prediction(MeasurementPackage meas_package);
+  void Prediction(const MeasurementPackage& meas_package);
 
   /**
    * Updates the state and the state covariance matrix using a laser measurement
    * @param meas_package The measurement at k+1
    */
-  void UpdateLidar(MeasurementPackage meas_package);
+  void UpdateLidar(const MeasurementPackage& meas_package);
 
   /**
    * Updates the state and the state covariance matrix using a radar measurement
    * @param meas_package The measurement at k+1
    */
-  void UpdateRadar(MeasurementPackage meas_package);
+  void UpdateRadar(const MeasurementPackage& meas_package);
 
   /**
    * Creates sigma points in the augmented space (incl. noise)
@@ -136,7 +136,7 @@ public:
    * Predicts sigma points in the process function
    * @param delta_t Time difference between measurements
    */
-  void SigmaPointPrediction(double delta_t);
+  void SigmaPointPrediction(const double delta_t);
 
   /**
    * Provides a prediction for state mean and covariance
@@ -146,17 +146,17 @@ public:
   /**
    * Predicts mean and covariance after passing through measurement function for radar
    */
-  void PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, int n_z);
+  void PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, const int n_z);
 
   /**
    * Predicts mean and covariance after passing through measurement function for lidar
    */
-  void PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, int n_z);
+  void PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, const int n_z);
 
   /**
    * Performs state update based on the measurement and prediction 
    */
-  void UpdateState(VectorXd z_pred, MatrixXd S_pred, MatrixXd Z_sig, int n_z, VectorXd z);
+  void UpdateState(const VectorXd& z_pred, const MatrixXd& S_pred, const MatrixXd& Z_sig, const int n_z, const VectorXd& z);
 };
 
 #endif /* UKF_H */

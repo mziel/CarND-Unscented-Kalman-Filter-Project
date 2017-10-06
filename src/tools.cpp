@@ -98,5 +98,5 @@ float Tools::NormalizeAtanDiff(const float atan_diff) {
     } else {
       return atan_diff;
     }
-}
+}  
 

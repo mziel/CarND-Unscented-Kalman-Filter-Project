@@ -33,7 +33,7 @@ UKF::UKF() {
   P_ = MatrixXd::Identity(n_x_, n_x_);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 0.2;
+  std_a_ = 0.8;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
   std_yawdd_ = 0.6;
@@ -96,7 +96,7 @@ UKF::~UKF() {}
  * @param {MeasurementPackage} meas_package The latest measurement data of
  * either radar or laser.
  */
-void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
+void UKF::ProcessMeasurement(const MeasurementPackage& meas_package) {
   // cout << "Processing measurment" << endl;
   bool processCurrentRadar = (meas_package.sensor_type_ == MeasurementPackage::RADAR && use_radar_);
   bool processCurrentLaser = (meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_);
@@ -127,7 +127,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
  * Initialize state upon receiving a first measurement
  * @param meas_package The latest measurement data of either radar or laser
  */
-void UKF::InitializeState(MeasurementPackage meas_package) {
+void UKF::InitializeState(const MeasurementPackage& meas_package) {
   if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
     // cout << "Radar" << endl;
     // Convert radar from polar to cartesian coordinates and initialize state.
@@ -152,7 +152,7 @@ void UKF::InitializeState(MeasurementPackage meas_package) {
  * @param {MeasurementPackage} meas_package
  * measurement and this one.
  */
-void UKF::Prediction(MeasurementPackage meas_package) {
+void UKF::Prediction(const MeasurementPackage& meas_package) {
     // cout << "Prediction step" << endl;
     double delta_t = (meas_package.timestamp_ - previous_timestamp_) / 1000000.0; //dt - expressed in seconds
     previous_timestamp_ = meas_package.timestamp_;
@@ -166,7 +166,7 @@ void UKF::Prediction(MeasurementPackage meas_package) {
  * Updates the state and the state covariance matrix using a laser measurement.
  * @param {MeasurementPackage} meas_package
  */
-void UKF::UpdateLidar(MeasurementPackage meas_package) {
+void UKF::UpdateLidar(const MeasurementPackage& meas_package) {
   // cout << "Updating lidar" << endl;  
   /**
   TODO:
@@ -184,7 +184,7 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
  * Updates the state and the state covariance matrix using a radar measurement.
  * @param {MeasurementPackage} meas_package
  */
-void UKF::UpdateRadar(MeasurementPackage meas_package) {
+void UKF::UpdateRadar(const MeasurementPackage& meas_package) {
   // cout << "Updating radar" << endl;  
   /**
   TODO:
@@ -235,7 +235,7 @@ void UKF::AugmentedSigmaPoints() {
  * Predicts sigma points in the process function
  * @param delta_t Time difference between measurements
  */
-void UKF::SigmaPointPrediction(double delta_t) {
+void UKF::SigmaPointPrediction(const double delta_t) {
   // cout << "Predicting with sigma points" << endl;   
 
   //predict sigma points
@@ -316,7 +316,7 @@ void UKF::PredictMeanAndCovariance() {
 /**
  * Predicts mean and covariance after passing through measurement function for radar
  */
-void UKF::PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, int n_z) {
+void UKF::PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, const int n_z) {
   // cout << "Predicting radar measurement" << endl;   
 
   //create matrix for sigma points in measurement space
@@ -375,7 +375,7 @@ void UKF::PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_
 /**
  * Predicts mean and covariance after passing through measurement function for lidar
  */
-void UKF::PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, int n_z) {
+void UKF::PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, const int n_z) {
   // cout << "Predicting lidar measurement" << endl;   
 
   //create matrix for sigma points in measurement space
@@ -413,7 +413,7 @@ void UKF::PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_
 /**
  * Performs state update based on the measurement and prediction 
  */
-void UKF::UpdateState(VectorXd z_pred, MatrixXd S_pred, MatrixXd Z_sig, int n_z, VectorXd z) {
+void UKF::UpdateState(const VectorXd& z_pred, const MatrixXd& S_pred, const MatrixXd& Z_sig, const int n_z, const VectorXd& z) {
   // cout << "Updating state" << endl;   
 
   //create matrix for cross correlation Tc
