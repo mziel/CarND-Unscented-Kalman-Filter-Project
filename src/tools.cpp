@@ -9,8 +9,8 @@ Tools::Tools() {}
 
 Tools::~Tools() {}
 
-VectorXd Tools::CalculateRMSE(const vector<VectorXd>& estimations,
-                              const vector<VectorXd>& ground_truth) {
+VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
+                              const vector<VectorXd> &ground_truth) {
   VectorXd rmse(4);
   rmse << 0, 0, 0, 0;
 
@@ -41,7 +41,7 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd>& estimations,
   return rmse;
 }
 
-VectorXd Tools::CarthesianToPolar(const VectorXd& x_input) {
+VectorXd Tools::CarthesianToPolar(const VectorXd &x_input) {
   VectorXd x_out = VectorXd(3);
 
   float p_x = x_input[0];
@@ -62,7 +62,7 @@ VectorXd Tools::CarthesianToPolar(const VectorXd& x_input) {
   return x_out;
 }
 
-VectorXd Tools::PolarToCarthesian(const VectorXd& x_input) {
+VectorXd Tools::PolarToCarthesian(const VectorXd &x_input) {
   VectorXd x_out = VectorXd(4);
 
   float rho = x_input[0];
