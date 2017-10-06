@@ -77,6 +77,12 @@ public:
   ///* Previous timestamp
   long long previous_timestamp_;
 
+  ///* Covariance matrix for laser measurement noise
+  MatrixXd R_laser_;
+
+  ///* Covariance matrix for radar measurement noise
+  MatrixXd R_radar_;
+
   ///* Helper object
   Tools tools;
 
