@@ -117,6 +117,10 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   }
 }
 
+/**
+ * Initialize state upon receiving a first measurement
+ * @param meas_package The latest measurement data of either radar or laser
+ */
 void UKF::InitializeState(MeasurementPackage meas_package) {
   if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
     // cout << "Radar" << endl;
@@ -188,7 +192,9 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
     UpdateState(z_out, S_out, Z_sig_out, n_z, meas_package.raw_measurements_);        
 }
 
-
+/**
+ * Creates sigma points in the augmented space (incl. noise)
+ */
 void UKF::AugmentedSigmaPoints() {
   // cout << "Calculating sigma points" << endl;   
 
@@ -219,6 +225,10 @@ void UKF::AugmentedSigmaPoints() {
   // cout << "Xsig_aug_ = " << Xsig_aug_ << endl;     
 }
 
+/**
+ * Predicts sigma points in the process function
+ * @param delta_t Time difference between measurements
+ */
 void UKF::SigmaPointPrediction(double delta_t) {
   // cout << "Predicting with sigma points" << endl;   
 
@@ -269,6 +279,9 @@ void UKF::SigmaPointPrediction(double delta_t) {
   // cout << "Xsig_pred_ = " << Xsig_pred_ << endl;       
 }
 
+/**
+ * Provides a prediction for state mean and covariance
+ */
 void UKF::PredictMeanAndCovariance() {
   // cout << "Predicting mean and covariance" << endl;   
   // set weights
@@ -304,6 +317,9 @@ void UKF::PredictMeanAndCovariance() {
   // cout << "P_ = " << P_ << endl;       
 }
 
+/**
+ * Predicts mean and covariance after passing through measurement function for radar
+ */
 void UKF::PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, int n_z) {
   // cout << "Predicting radar measurement" << endl;   
 
@@ -365,6 +381,9 @@ void UKF::PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_
   // cout << "Z_sig_out = " << Zsig << endl;       
 }
 
+/**
+ * Predicts mean and covariance after passing through measurement function for lidar
+ */
 void UKF::PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_sig_out, int n_z) {
   // cout << "Predicting lidar measurement" << endl;   
 
@@ -415,7 +434,9 @@ void UKF::PredictLidarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Z_
   // cout << "Z_sig_out = " << Zsig << endl;       
 }
 
-
+/**
+ * Performs state update based on the measurement and prediction 
+ */
 void UKF::UpdateState(VectorXd z_pred, MatrixXd S_pred, MatrixXd Z_sig, int n_z, VectorXd z) {
   // cout << "Updating state" << endl;   
 
