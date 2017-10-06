@@ -96,54 +96,19 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   bool processCurrentLaser = (meas_package.sensor_type_ == MeasurementPackage::LASER && use_laser_);
   bool processCurent = processCurrentRadar || processCurrentLaser;
   if (processCurent) {
-    /*****************************************************************************
-     *  Initialization
-     ****************************************************************************/
+    // Initialization
     if (!is_initialized_) {
-      if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
-      // cout << "Radar" << endl;
-
-        /**
-        Convert radar from polar to cartesian coordinates and initialize state.
-        */
-        x_.head(4) = tools.PolarToCarthesian(meas_package.raw_measurements_);
-        x_(2) = 0.0; // radar measurement does not contain enough information to determine the state variable velocities
-        x_(3) = 0.0; // radar measurement does not contain enough information to determine the yaw
-        x_(4) = 0.0; // radar measurement does not contain enough information to determine the yaw rate
-      }
-      else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
-      // cout << "Lidar" << endl;
-
-        /**
-        Initialize state
-        */
-        x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0.0, 0.0, 0.0;
-      }
-
-      previous_timestamp_ = meas_package.timestamp_;
-      // done initializing, no need to predict or update
-      is_initialized_ = true;
-      return;
+      InitializeState(meas_package);
     } else {
+      // Prediction
+      Prediction(meas_package);
 
-      /*****************************************************************************
-       *  Prediction
-       ****************************************************************************/
-    
-      // Update the state transition matrix F according to the new elapsed time
-      double delta_t = (meas_package.timestamp_ - previous_timestamp_) / 1000000.0; //dt - expressed in seconds
-      previous_timestamp_ = meas_package.timestamp_;
-      Prediction(delta_t);
-    
-      /*****************************************************************************
-       *  Update
-       ****************************************************************************/
+      // Update    
       if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
         UpdateRadar(meas_package);
       } else {
         UpdateLidar(meas_package);
       }
-    
       // print the output
       // cout << "x_ = " << x_ << endl;
       // cout << "P_ = " << P_ << endl;
@@ -152,13 +117,36 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   }
 }
 
+void UKF::InitializeState(MeasurementPackage meas_package) {
+  if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
+    // cout << "Radar" << endl;
+    // Convert radar from polar to cartesian coordinates and initialize state.
+    x_.head(4) = tools.PolarToCarthesian(meas_package.raw_measurements_);
+    x_(2) = 0.0; // radar measurement does not contain enough information to determine the state variable velocities
+    x_(3) = 0.0; // radar measurement does not contain enough information to determine the yaw
+    x_(4) = 0.0; // radar measurement does not contain enough information to determine the yaw rate
+  }
+  else if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
+    // cout << "Lidar" << endl;
+    //Initialize state
+    x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0.0, 0.0, 0.0;
+  }
+
+  previous_timestamp_ = meas_package.timestamp_;
+  is_initialized_ = true;
+}
+
+
 /**
  * Predicts sigma points, the state, and the state covariance matrix.
- * @param {double} delta_t the change in time (in seconds) between the last
+ * @param {MeasurementPackage} meas_package
  * measurement and this one.
  */
-void UKF::Prediction(double delta_t) {
+void UKF::Prediction(MeasurementPackage meas_package) {
     // cout << "Prediction step" << endl;
+    double delta_t = (meas_package.timestamp_ - previous_timestamp_) / 1000000.0; //dt - expressed in seconds
+    previous_timestamp_ = meas_package.timestamp_;
+
     AugmentedSigmaPoints();
     SigmaPointPrediction(delta_t);
     PredictMeanAndCovariance();
